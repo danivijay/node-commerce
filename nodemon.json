@@ -1,0 +1,6 @@
+{
+      "env": {
+            "MONGO_MLAB_USER": "dmv_exp_mgr",
+            "MONGO_MLAB_PASSWORD": "GZ3p5mxZ"
+      }
+}
