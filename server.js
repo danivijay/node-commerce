@@ -23,7 +23,7 @@ Mongoose.connect('mongodb://localhost/thepolyglotdeveloper');
 const UserModel = Mongoose.model('user', {
     userName: String,
     password: String,
-    // address: String,
+    email: String,
 });
 
 const UserLoginModel = Mongoose.model('userlogin', {
@@ -52,7 +52,7 @@ const UserType = new GraphQLObjectType({
         id: { type: GraphQLID },
         userName: { type: GraphQLString },
         password: { type: GraphQLString },
-        // address: { type: GraphQLString },
+        email: { type: GraphQLString },
     },
 });
 
@@ -132,7 +132,7 @@ const schema = new GraphQLSchema({
                 args: {
                     userName: { type: GraphQLNonNull(GraphQLString) },
                     password: { type: GraphQLNonNull(GraphQLString) },
-                    // address: { type: GraphQLNonNull(GraphQLString) },
+                    email: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserModel(args);
