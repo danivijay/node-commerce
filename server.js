@@ -1,6 +1,7 @@
 const Express = require('express');
 const ExpressGraphQL = require('express-graphql');
 const Mongoose = require('mongoose');
+const cors = require('cors');
 //const schema = require('./schema/schema');
 
 const {
@@ -15,12 +16,19 @@ const {
 
 var app = Express();
 
+app.use(cors());
+
 Mongoose.connect('mongodb://localhost/thepolyglotdeveloper');
 
 const UserModel = Mongoose.model('user', {
     userName: String,
     password: String,
-    address: String,
+    // address: String,
+});
+
+const UserLoginModel = Mongoose.model('userlogin', {
+    userName: String,
+    password: String,
 });
 
 const ProductModel = Mongoose.model('product', {
@@ -44,7 +52,7 @@ const UserType = new GraphQLObjectType({
         id: { type: GraphQLID },
         userName: { type: GraphQLString },
         password: { type: GraphQLString },
-        address: { type: GraphQLString },
+        // address: { type: GraphQLString },
     },
 });
 
@@ -75,12 +83,18 @@ const schema = new GraphQLSchema({
     query: new GraphQLObjectType({
         name: 'Query',
         fields: {
-            // user: {
-            //     type: GraphQLList(UserType),
-            //     resolve: (root, args, context, info) => {
-            //         return UserModel.find().exec();
-            //     },
-            // },
+            users: {
+                type: GraphQLList(UserType),
+                resolve: (root, args, context, info) => {
+                    return UserModel.find().exec();
+                },
+            },
+            products: {
+                type: GraphQLList(ProductType),
+                resolve: (root, args, context, info) => {
+                    return ProductModel.find().exec();
+                },
+            },
             user: {
                 type: UserType,
                 args: {
@@ -118,11 +132,35 @@ const schema = new GraphQLSchema({
                 args: {
                     userName: { type: GraphQLNonNull(GraphQLString) },
                     password: { type: GraphQLNonNull(GraphQLString) },
-                    address: { type: GraphQLNonNull(GraphQLString) },
+                    // address: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserModel(args);
                     return user.save();
+                },
+            },
+            login: {
+                type: UserType,
+                args: {
+                    userName: { type: GraphQLNonNull(GraphQLString) },
+                    password: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    var user = new UserLoginModel(args);
+                    // return user.save();
+
+                    console.log('args:', user);
+                    if (
+                        user.userName === 'admin' &&
+                        user.password === 'ecart'
+                    ) {
+                        console.log('success::', 'true');
+                        console.log('user:', user);
+                        return user;
+                    } else {
+                        console.log('success::', 'false');
+                        return { success: 'false' };
+                    }
                 },
             },
             product: {
@@ -172,6 +210,6 @@ app.use(
     }),
 );
 
-app.listen(3000, () => {
-    console.log('Listening at :3000...');
+app.listen(4000, () => {
+    console.log('Listening at :4000...');
 });
