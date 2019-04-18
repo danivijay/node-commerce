@@ -122,6 +122,12 @@ const schema = new GraphQLSchema({
                     return TransactionModel.findById(args.id).exec();
                 },
             },
+            transactions: {
+                type: GraphQLList(TransactionType),
+                resolve: (root, args, context, info) => {
+                    return TransactionModel.find().exec();
+                },
+            },
         },
     }),
     mutation: new GraphQLObjectType({
