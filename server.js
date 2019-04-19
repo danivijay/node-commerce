@@ -18,11 +18,14 @@ var app = Express();
 
 app.use(cors());
 
-Mongoose.connect('mongodb://localhost/thepolyglotdeveloper');
+//Mongoose.connect('mongodb://localhost/thepolyglotdeveloper');
+Mongoose.connect('mongodb://localhost/node_commerce_db');
 
 const UserModel = Mongoose.model('user', {
     userName: String,
+    userType: String,
     password: String,
+    address: String,
     email: String,
 });
 
@@ -40,8 +43,8 @@ const ProductModel = Mongoose.model('product', {
 const TransactionModel = Mongoose.model('transaction', {
     quantity: Number,
     user_id: String,
+    product_id: String,
     date: String,
-    address_id: String,
     currency: String,
     status: String,
 });
@@ -51,8 +54,10 @@ const UserType = new GraphQLObjectType({
     fields: {
         id: { type: GraphQLID },
         userName: { type: GraphQLString },
+        userType: { type: GraphQLString },
         password: { type: GraphQLString },
         email: { type: GraphQLString },
+        address: { type: GraphQLString },
     },
 });
 
@@ -71,9 +76,9 @@ const TransactionType = new GraphQLObjectType({
     fields: {
         id: { type: GraphQLID },
         quantity: { type: GraphQLInt },
-        user_id: { type: GraphQLString },
+        user_id: { type: GraphQLID },
+        product_id: { type: GraphQLID },
         date: { type: GraphQLString },
-        address_id: { type: GraphQLString },
         currency: { type: GraphQLString },
         status: { type: GraphQLString },
     },
@@ -137,8 +142,10 @@ const schema = new GraphQLSchema({
                 type: UserType,
                 args: {
                     userName: { type: GraphQLNonNull(GraphQLString) },
+                    userType: { type: GraphQLNonNull(GraphQLString) },
                     password: { type: GraphQLNonNull(GraphQLString) },
                     email: { type: GraphQLNonNull(GraphQLString) },
+                    address: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserModel(args);
@@ -186,8 +193,8 @@ const schema = new GraphQLSchema({
                 args: {
                     quantity: { type: GraphQLNonNull(GraphQLInt) },
                     user_id: { type: GraphQLNonNull(GraphQLString) },
+                    product_id: { type: GraphQLNonNull(GraphQLString) },
                     date: { type: GraphQLNonNull(GraphQLString) },
-                    address_id: { type: GraphQLNonNull(GraphQLString) },
                     currency: { type: GraphQLNonNull(GraphQLString) },
                     status: { type: GraphQLNonNull(GraphQLString) },
                 },
