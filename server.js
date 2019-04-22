@@ -1,6 +1,7 @@
 const Express = require('express');
 const ExpressGraphQL = require('express-graphql');
 const Mongoose = require('mongoose');
+const cors = require('cors');
 //const schema = require('./schema/schema');
 
 const {
@@ -15,12 +16,22 @@ const {
 
 var app = Express();
 
-Mongoose.connect('mongodb://localhost/thepolyglotdeveloper');
+app.use(cors());
+
+//Mongoose.connect('mongodb://localhost/thepolyglotdeveloper');
+Mongoose.connect('mongodb://localhost/node_commerce_db');
 
 const UserModel = Mongoose.model('user', {
     userName: String,
+    userType: String,
     password: String,
     address: String,
+    email: String,
+});
+
+const UserLoginModel = Mongoose.model('userlogin', {
+    userName: String,
+    password: String,
 });
 
 const ProductModel = Mongoose.model('product', {
@@ -32,8 +43,8 @@ const ProductModel = Mongoose.model('product', {
 const TransactionModel = Mongoose.model('transaction', {
     quantity: Number,
     user_id: String,
+    product_id: String,
     date: String,
-    address_id: String,
     currency: String,
     status: String,
 });
@@ -43,7 +54,9 @@ const UserType = new GraphQLObjectType({
     fields: {
         id: { type: GraphQLID },
         userName: { type: GraphQLString },
+        userType: { type: GraphQLString },
         password: { type: GraphQLString },
+        email: { type: GraphQLString },
         address: { type: GraphQLString },
     },
 });
@@ -63,9 +76,9 @@ const TransactionType = new GraphQLObjectType({
     fields: {
         id: { type: GraphQLID },
         quantity: { type: GraphQLInt },
-        user_id: { type: GraphQLString },
+        user_id: { type: GraphQLID },
+        product_id: { type: GraphQLID },
         date: { type: GraphQLString },
-        address_id: { type: GraphQLString },
         currency: { type: GraphQLString },
         status: { type: GraphQLString },
     },
@@ -75,12 +88,18 @@ const schema = new GraphQLSchema({
     query: new GraphQLObjectType({
         name: 'Query',
         fields: {
-            // user: {
-            //     type: GraphQLList(UserType),
-            //     resolve: (root, args, context, info) => {
-            //         return UserModel.find().exec();
-            //     },
-            // },
+            users: {
+                type: GraphQLList(UserType),
+                resolve: (root, args, context, info) => {
+                    return UserModel.find().exec();
+                },
+            },
+            products: {
+                type: GraphQLList(ProductType),
+                resolve: (root, args, context, info) => {
+                    return ProductModel.find().exec();
+                },
+            },
             user: {
                 type: UserType,
                 args: {
@@ -108,6 +127,12 @@ const schema = new GraphQLSchema({
                     return TransactionModel.findById(args.id).exec();
                 },
             },
+            transactions: {
+                type: GraphQLList(TransactionType),
+                resolve: (root, args, context, info) => {
+                    return TransactionModel.find().exec();
+                },
+            },
         },
     }),
     mutation: new GraphQLObjectType({
@@ -117,12 +142,38 @@ const schema = new GraphQLSchema({
                 type: UserType,
                 args: {
                     userName: { type: GraphQLNonNull(GraphQLString) },
+                    userType: { type: GraphQLNonNull(GraphQLString) },
                     password: { type: GraphQLNonNull(GraphQLString) },
+                    email: { type: GraphQLNonNull(GraphQLString) },
                     address: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserModel(args);
                     return user.save();
+                },
+            },
+            login: {
+                type: UserType,
+                args: {
+                    userName: { type: GraphQLNonNull(GraphQLString) },
+                    password: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    var user = new UserLoginModel(args);
+                    // return user.save();
+
+                    console.log('args:', user);
+                    if (
+                        user.userName === 'admin' &&
+                        user.password === 'ecart'
+                    ) {
+                        console.log('success::', 'true');
+                        console.log('user:', user);
+                        return user;
+                    } else {
+                        console.log('success::', 'false');
+                        return { success: 'false' };
+                    }
                 },
             },
             product: {
@@ -142,8 +193,8 @@ const schema = new GraphQLSchema({
                 args: {
                     quantity: { type: GraphQLNonNull(GraphQLInt) },
                     user_id: { type: GraphQLNonNull(GraphQLString) },
+                    product_id: { type: GraphQLNonNull(GraphQLString) },
                     date: { type: GraphQLNonNull(GraphQLString) },
-                    address_id: { type: GraphQLNonNull(GraphQLString) },
                     currency: { type: GraphQLNonNull(GraphQLString) },
                     status: { type: GraphQLNonNull(GraphQLString) },
                 },
@@ -172,6 +223,6 @@ app.use(
     }),
 );
 
-app.listen(3000, () => {
-    console.log('Listening at :3000...');
+app.listen(4000, () => {
+    console.log('Listening at :4000...');
 });
