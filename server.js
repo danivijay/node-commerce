@@ -103,7 +103,8 @@ const schema = new GraphQLSchema({
             user: {
                 type: UserType,
                 args: {
-                    id: { type: GraphQLNonNull(GraphQLID) },
+                    // id: { type: GraphQLNonNull(GraphQLID) },
+                    id: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     return UserModel.findById(args.id).exec();
