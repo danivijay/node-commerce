@@ -193,7 +193,9 @@ const schema = new GraphQLSchema({
                         return user;
                     } else {
                         console.log('success::', 'false');
-                        return { success: 'false' };
+                        user.userName = 'incorrect username or password';
+                        user.password = 'incorrect username or password';
+                        return user;
                     }
                 },
             },
