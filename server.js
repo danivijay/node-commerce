@@ -2,7 +2,7 @@ const Express = require('express');
 const ExpressGraphQL = require('express-graphql');
 const Mongoose = require('mongoose');
 const cors = require('cors');
-//const schema = require('./schema/schema');
+const jwt = require('jsonwebtoken');
 
 const {
     GraphQLID,
@@ -58,6 +58,15 @@ const UserType = new GraphQLObjectType({
         password: { type: GraphQLString },
         email: { type: GraphQLString },
         address: { type: GraphQLString },
+    },
+});
+
+const loginUserType = new GraphQLObjectType({
+    name: 'LoginUser',
+    fields: {
+        id: { type: GraphQLID },
+        userName: { type: GraphQLString },
+        password: { type: GraphQLString },
     },
 });
 
@@ -154,26 +163,39 @@ const schema = new GraphQLSchema({
                 },
             },
             login: {
-                type: UserType,
+                type: loginUserType,
                 args: {
                     userName: { type: GraphQLNonNull(GraphQLString) },
                     password: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserLoginModel(args);
-                    // return user.save();
 
-                    console.log('args:', user);
                     if (
                         user.userName === 'admin' &&
                         user.password === 'ecart'
                     ) {
                         console.log('success::', 'true');
                         console.log('user:', user);
+
+                        const JWTToken = jwt.sign(
+                            {
+                                email: user.userName,
+                                password: user.password,
+                            },
+                            'secret',
+                            {
+                                expiresIn: '2h',
+                            },
+                        );
+                        user.userName = 'Success:true';
+                        user.password = JWTToken;
                         return user;
                     } else {
                         console.log('success::', 'false');
-                        return { success: 'false' };
+                        user.userName = 'incorrect username or password';
+                        user.password = 'incorrect username or password';
+                        return user;
                     }
                 },
             },
