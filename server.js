@@ -171,32 +171,38 @@ const schema = new GraphQLSchema({
                 resolve: (root, args, context, info) => {
                     var user = new UserLoginModel(args);
 
-                    if (
-                        user.userName === 'admin' &&
-                        user.password === 'ecart'
-                    ) {
-                        console.log('success::', 'true');
-                        console.log('user:', user);
+                    var promise1 = Promise.resolve(
+                        UserModel.find({ userName: args.userName }).exec(),
+                    );
+                    return promise1.then(function(value) {
+                        if (
+                            value[0] &&
+                            args.userName === value[0].userName &&
+                            args.password === value[0].password
+                        ) {
+                            console.log('success::', 'true');
+                            const JWTToken = jwt.sign(
+                                {
+                                    userName: args.userName,
+                                    password: args.password,
+                                },
+                                'secret',
+                                {
+                                    expiresIn: '2h',
+                                },
+                            );
 
-                        const JWTToken = jwt.sign(
-                            {
-                                email: user.userName,
-                                password: user.password,
-                            },
-                            'secret',
-                            {
-                                expiresIn: '2h',
-                            },
-                        );
-                        user.userName = 'Success:true';
-                        user.password = JWTToken;
-                        return user;
-                    } else {
-                        console.log('success::', 'false');
-                        user.userName = 'incorrect username or password';
-                        user.password = 'incorrect username or password';
-                        return user;
-                    }
+                            user.userName = 'Success:true';
+                            user.password = JWTToken;
+                            return user;
+                        } else {
+                            console.log('success::', 'false');
+                            user.userName = 'incorrect username or password';
+                            user.password = 'incorrect username or password';
+                            return user;
+                        }
+                    });
+                    // return user;
                 },
             },
             product: {
