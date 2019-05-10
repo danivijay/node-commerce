@@ -7,9 +7,13 @@ var graphqlHTTP = require('express-graphql');
 
 function loggingMiddleware(req, res, next) {
     console.log('loggingmiddleware:', req.headers.authorization);
-    // verifyToken(req.headers.authorization);
-    var verifiedJwt = jwt.verify(req.headers.authorization, 'secret');
-    console.log('verifiedJwt:', verifiedJwt);
+    if (req.headers.authorization) {
+        var verifiedJwt = jwt.verify(req.headers.authorization, 'secretkey');
+        console.log('verifiedJwt:', verifiedJwt);
+        next();
+    } else {
+        next();
+    }
 }
 
 const {
@@ -162,16 +166,7 @@ const schema = new GraphQLSchema({
                     id: { type: GraphQLNonNull(GraphQLID) },
                 },
                 resolve: (root, args, context, info) => {
-                    var token =
-                        req.body.token ||
-                        req.query.token ||
-                        req.headers['x-access-token'] ||
-                        req.headers['Authorization'] ||
-                        req.headers['authorization'];
-
-                    if (jwt.verify(token, 'secretkey')) {
-                        return TransactionModel.findById(args.id).exec();
-                    }
+                    return TransactionModel.findById(args.id).exec();
                 },
             },
             transactions: {
@@ -280,32 +275,6 @@ const schema = new GraphQLSchema({
 //         graphiql: true,
 //     }),
 // );
-
-const verifyToken = (token) => {
-    const [prefix, payload] = token.split(' ');
-    let user = null;
-    if (!payload) {
-        //no token in the header
-        throw new Error('No token provided');
-    }
-    if (prefix !== tokenPrefix) {
-        //unexpected prefix or format
-        throw new Error('Invalid header format');
-    }
-    jwt.verify(payload, secret, (err, data) => {
-        if (err) {
-            //token is invalid
-            throw new Error('Invalid token!');
-        } else {
-            user = find(Users, { email: data.username });
-        }
-    });
-    if (!user) {
-        //user does not exist in DB
-        throw new Error('User doesn not exist');
-    }
-    return user;
-};
 app.use(loggingMiddleware);
 app.use(
     '/graphql',
