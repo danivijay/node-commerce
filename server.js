@@ -3,6 +3,14 @@ const ExpressGraphQL = require('express-graphql');
 const Mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+var graphqlHTTP = require('express-graphql');
+
+function loggingMiddleware(req, res, next) {
+    console.log('loggingmiddleware:', req.headers.authorization);
+    // verifyToken(req.headers.authorization);
+    var verifiedJwt = jwt.verify(req.headers.authorization, 'secret');
+    console.log('verifiedJwt:', verifiedJwt);
+}
 
 const {
     GraphQLID,
@@ -48,6 +56,17 @@ const TransactionModel = Mongoose.model('transaction', {
     currency: String,
     status: String,
 });
+
+//jwt verifying function
+function jwtverify(token) {
+    var verify;
+    if (jwt.verify(token, 'secretkey')) {
+        verify = 'success';
+    } else {
+        verify = 'failure';
+    }
+    return verify;
+}
 
 const UserType = new GraphQLObjectType({
     name: 'User',
@@ -128,18 +147,36 @@ const schema = new GraphQLSchema({
                     return ProductModel.findById(args.id).exec();
                 },
             },
+            deleteproduct: {
+                type: ProductType,
+                args: {
+                    id: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    return ProductModel.findByIdAndDelete(args.id).exec();
+                },
+            },
             transaction: {
                 type: TransactionType,
                 args: {
                     id: { type: GraphQLNonNull(GraphQLID) },
                 },
                 resolve: (root, args, context, info) => {
-                    return TransactionModel.findById(args.id).exec();
+                    var token =
+                        req.body.token ||
+                        req.query.token ||
+                        req.headers['x-access-token'] ||
+                        req.headers['Authorization'] ||
+                        req.headers['authorization'];
+
+                    if (jwt.verify(token, 'secretkey')) {
+                        return TransactionModel.findById(args.id).exec();
+                    }
                 },
             },
             transactions: {
                 type: GraphQLList(TransactionType),
-                resolve: (root, args, context, info) => {
+                resolve: (root, args, context, info, req) => {
                     return TransactionModel.find().exec();
                 },
             },
@@ -186,7 +223,7 @@ const schema = new GraphQLSchema({
                                     userName: args.userName,
                                     password: args.password,
                                 },
-                                'secret',
+                                'secretkey',
                                 {
                                     expiresIn: '2h',
                                 },
@@ -244,6 +281,32 @@ const schema = new GraphQLSchema({
 //     }),
 // );
 
+const verifyToken = (token) => {
+    const [prefix, payload] = token.split(' ');
+    let user = null;
+    if (!payload) {
+        //no token in the header
+        throw new Error('No token provided');
+    }
+    if (prefix !== tokenPrefix) {
+        //unexpected prefix or format
+        throw new Error('Invalid header format');
+    }
+    jwt.verify(payload, secret, (err, data) => {
+        if (err) {
+            //token is invalid
+            throw new Error('Invalid token!');
+        } else {
+            user = find(Users, { email: data.username });
+        }
+    });
+    if (!user) {
+        //user does not exist in DB
+        throw new Error('User doesn not exist');
+    }
+    return user;
+};
+app.use(loggingMiddleware);
 app.use(
     '/graphql',
     ExpressGraphQL({
