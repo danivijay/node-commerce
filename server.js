@@ -3,6 +3,18 @@ const ExpressGraphQL = require('express-graphql');
 const Mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+var graphqlHTTP = require('express-graphql');
+
+function loggingMiddleware(req, res, next) {
+    console.log('loggingmiddleware:', req.headers.authorization);
+    if (req.headers.authorization) {
+        var verifiedJwt = jwt.verify(req.headers.authorization, 'secretkey');
+        console.log('verifiedJwt:', verifiedJwt);
+        next();
+    } else {
+        next();
+    }
+}
 
 const {
     GraphQLID,
@@ -48,6 +60,17 @@ const TransactionModel = Mongoose.model('transaction', {
     currency: String,
     status: String,
 });
+
+//jwt verifying function
+function jwtverify(token) {
+    var verify;
+    if (jwt.verify(token, 'secretkey')) {
+        verify = 'success';
+    } else {
+        verify = 'failure';
+    }
+    return verify;
+}
 
 const UserType = new GraphQLObjectType({
     name: 'User',
@@ -128,6 +151,15 @@ const schema = new GraphQLSchema({
                     return ProductModel.findById(args.id).exec();
                 },
             },
+            deleteproduct: {
+                type: ProductType,
+                args: {
+                    id: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    return ProductModel.findByIdAndDelete(args.id).exec();
+                },
+            },
             transaction: {
                 type: TransactionType,
                 args: {
@@ -139,7 +171,7 @@ const schema = new GraphQLSchema({
             },
             transactions: {
                 type: GraphQLList(TransactionType),
-                resolve: (root, args, context, info) => {
+                resolve: (root, args, context, info, req) => {
                     return TransactionModel.find().exec();
                 },
             },
@@ -186,7 +218,7 @@ const schema = new GraphQLSchema({
                                     userName: args.userName,
                                     password: args.password,
                                 },
-                                'secret',
+                                'secretkey',
                                 {
                                     expiresIn: '2h',
                                 },
@@ -243,7 +275,7 @@ const schema = new GraphQLSchema({
 //         graphiql: true,
 //     }),
 // );
-
+app.use(loggingMiddleware);
 app.use(
     '/graphql',
     ExpressGraphQL({
