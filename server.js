@@ -37,7 +37,7 @@ const UserModel = Mongoose.model('user', {
     userName: String,
     userType: String,
     password: String,
-    address: String,
+    address: [],
     email: String,
 });
 
@@ -80,7 +80,7 @@ const UserType = new GraphQLObjectType({
         userType: { type: GraphQLString },
         password: { type: GraphQLString },
         email: { type: GraphQLString },
-        address: { type: GraphQLString },
+        address: { type: GraphQLList(GraphQLString) },
     },
 });
 
@@ -187,7 +187,10 @@ const schema = new GraphQLSchema({
                     userType: { type: GraphQLNonNull(GraphQLString) },
                     password: { type: GraphQLNonNull(GraphQLString) },
                     email: { type: GraphQLNonNull(GraphQLString) },
-                    address: { type: GraphQLNonNull(GraphQLString) },
+                    // address: { type: GraphQLNonNull(GraphQLString) },
+                    address: {
+                        type: GraphQLList(GraphQLString),
+                    },
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserModel(args);
