@@ -2,7 +2,19 @@ const Express = require('express');
 const ExpressGraphQL = require('express-graphql');
 const Mongoose = require('mongoose');
 const cors = require('cors');
-//const schema = require('./schema/schema');
+const jwt = require('jsonwebtoken');
+var graphqlHTTP = require('express-graphql');
+
+function loggingMiddleware(req, res, next) {
+    console.log('loggingmiddleware:', req.headers.authorization);
+    if (req.headers.authorization) {
+        var verifiedJwt = jwt.verify(req.headers.authorization, 'secretkey');
+        console.log('verifiedJwt:', verifiedJwt);
+        next();
+    } else {
+        next();
+    }
+}
 
 const {
     GraphQLID,
@@ -25,7 +37,7 @@ const UserModel = Mongoose.model('user', {
     userName: String,
     userType: String,
     password: String,
-    address: String,
+    address: [],
     email: String,
 });
 
@@ -49,6 +61,17 @@ const TransactionModel = Mongoose.model('transaction', {
     status: String,
 });
 
+//jwt verifying function
+function jwtverify(token) {
+    var verify;
+    if (jwt.verify(token, 'secretkey')) {
+        verify = 'success';
+    } else {
+        verify = 'failure';
+    }
+    return verify;
+}
+
 const UserType = new GraphQLObjectType({
     name: 'User',
     fields: {
@@ -57,7 +80,16 @@ const UserType = new GraphQLObjectType({
         userType: { type: GraphQLString },
         password: { type: GraphQLString },
         email: { type: GraphQLString },
-        address: { type: GraphQLString },
+        address: { type: GraphQLList(GraphQLString) },
+    },
+});
+
+const loginUserType = new GraphQLObjectType({
+    name: 'LoginUser',
+    fields: {
+        id: { type: GraphQLID },
+        userName: { type: GraphQLString },
+        password: { type: GraphQLString },
     },
 });
 
@@ -103,7 +135,8 @@ const schema = new GraphQLSchema({
             user: {
                 type: UserType,
                 args: {
-                    id: { type: GraphQLNonNull(GraphQLID) },
+                    // id: { type: GraphQLNonNull(GraphQLID) },
+                    id: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     return UserModel.findById(args.id).exec();
@@ -118,6 +151,15 @@ const schema = new GraphQLSchema({
                     return ProductModel.findById(args.id).exec();
                 },
             },
+            deleteproduct: {
+                type: ProductType,
+                args: {
+                    id: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    return ProductModel.findByIdAndDelete(args.id).exec();
+                },
+            },
             transaction: {
                 type: TransactionType,
                 args: {
@@ -129,7 +171,7 @@ const schema = new GraphQLSchema({
             },
             transactions: {
                 type: GraphQLList(TransactionType),
-                resolve: (root, args, context, info) => {
+                resolve: (root, args, context, info, req) => {
                     return TransactionModel.find().exec();
                 },
             },
@@ -145,7 +187,10 @@ const schema = new GraphQLSchema({
                     userType: { type: GraphQLNonNull(GraphQLString) },
                     password: { type: GraphQLNonNull(GraphQLString) },
                     email: { type: GraphQLNonNull(GraphQLString) },
-                    address: { type: GraphQLNonNull(GraphQLString) },
+                    // address: { type: GraphQLNonNull(GraphQLString) },
+                    address: {
+                        type: GraphQLList(GraphQLString),
+                    },
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserModel(args);
@@ -153,27 +198,46 @@ const schema = new GraphQLSchema({
                 },
             },
             login: {
-                type: UserType,
+                type: loginUserType,
                 args: {
                     userName: { type: GraphQLNonNull(GraphQLString) },
                     password: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserLoginModel(args);
-                    // return user.save();
 
-                    console.log('args:', user);
-                    if (
-                        user.userName === 'admin' &&
-                        user.password === 'ecart'
-                    ) {
-                        console.log('success::', 'true');
-                        console.log('user:', user);
-                        return user;
-                    } else {
-                        console.log('success::', 'false');
-                        return { success: 'false' };
-                    }
+                    var promise1 = Promise.resolve(
+                        UserModel.find({ userName: args.userName }).exec(),
+                    );
+                    return promise1.then(function(value) {
+                        if (
+                            value[0] &&
+                            args.userName === value[0].userName &&
+                            args.password === value[0].password
+                        ) {
+                            console.log('success::', 'true');
+                            const JWTToken = jwt.sign(
+                                {
+                                    userName: args.userName,
+                                    password: args.password,
+                                },
+                                'secretkey',
+                                {
+                                    expiresIn: '2h',
+                                },
+                            );
+
+                            user.userName = 'Success:true';
+                            user.password = JWTToken;
+                            return user;
+                        } else {
+                            console.log('success::', 'false');
+                            user.userName = 'incorrect username or password';
+                            user.password = 'incorrect username or password';
+                            return user;
+                        }
+                    });
+                    // return user;
                 },
             },
             product: {
@@ -214,7 +278,7 @@ const schema = new GraphQLSchema({
 //         graphiql: true,
 //     }),
 // );
-
+app.use(loggingMiddleware);
 app.use(
     '/graphql',
     ExpressGraphQL({
