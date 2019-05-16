@@ -23,6 +23,7 @@ const {
     GraphQLList,
     GraphQLNonNull,
     GraphQLObjectType,
+    GraphQLInputObjectType,
     GraphQLSchema,
 } = require('graphql');
 
@@ -32,6 +33,16 @@ app.use(cors());
 
 //Mongoose.connect('mongodb://localhost/thepolyglotdeveloper');
 Mongoose.connect('mongodb://localhost/node_commerce_db');
+
+const AddressModel = Mongoose.model('address', {
+    country: String,
+    fullName: String,
+    mobileNo: String,
+    pinCode: String,
+    streetAddress: String,
+    state: String,
+    default: String,
+});
 
 const UserModel = Mongoose.model('user', {
     userName: String,
@@ -72,6 +83,32 @@ function jwtverify(token) {
     return verify;
 }
 
+const createAddressInputType = new GraphQLInputObjectType({
+    name: 'CreateAddressInput',
+    fields: () => ({
+        country: { type: GraphQLString },
+        fullName: { type: GraphQLString },
+        mobileNo: { type: GraphQLString },
+        pinCode: { type: GraphQLString },
+        streetAddress: { type: GraphQLString },
+        state: { type: GraphQLString },
+        default: { type: GraphQLString },
+    }),
+});
+
+const AddressType = new GraphQLObjectType({
+    name: 'AddressType',
+    fields: {
+        country: { type: GraphQLString },
+        fullName: { type: GraphQLString },
+        mobileNo: { type: GraphQLString },
+        pinCode: { type: GraphQLString },
+        streetAddress: { type: GraphQLString },
+        state: { type: GraphQLString },
+        default: { type: GraphQLString },
+    },
+});
+
 const UserType = new GraphQLObjectType({
     name: 'User',
     fields: {
@@ -80,7 +117,9 @@ const UserType = new GraphQLObjectType({
         userType: { type: GraphQLString },
         password: { type: GraphQLString },
         email: { type: GraphQLString },
-        address: { type: GraphQLList(GraphQLString) },
+        address: {
+            type: GraphQLList(AddressType),
+        },
     },
 });
 
@@ -179,6 +218,7 @@ const schema = new GraphQLSchema({
     }),
     mutation: new GraphQLObjectType({
         name: 'Mutation',
+
         fields: {
             user: {
                 type: UserType,
@@ -189,7 +229,7 @@ const schema = new GraphQLSchema({
                     email: { type: GraphQLNonNull(GraphQLString) },
                     // address: { type: GraphQLNonNull(GraphQLString) },
                     address: {
-                        type: GraphQLList(GraphQLString),
+                        type: GraphQLList(createAddressInputType),
                     },
                 },
                 resolve: (root, args, context, info) => {
