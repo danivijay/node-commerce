@@ -184,7 +184,7 @@ const schema = new GraphQLSchema({
             product: {
                 type: ProductType,
                 args: {
-                    id: { type: GraphQLNonNull(GraphQLID) },
+                    id: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     return ProductModel.findById(args.id).exec();
@@ -267,7 +267,7 @@ const schema = new GraphQLSchema({
                                 },
                             );
 
-                            user.userName = 'Success:true';
+                            user.userName = value[0].id;
                             user.password = JWTToken;
                             return user;
                         } else {
