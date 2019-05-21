@@ -222,6 +222,7 @@ const schema = new GraphQLSchema({
                     }).exec();
                 },
             },
+
             transactions: {
                 type: GraphQLList(TransactionType),
                 resolve: (root, args, context, info, req) => {
@@ -319,6 +320,26 @@ const schema = new GraphQLSchema({
                 resolve: (root, args, context, info) => {
                     var transaction = new TransactionModel(args);
                     return transaction.save();
+                },
+            },
+
+            checkout_transaction: {
+                type: TransactionType,
+                args: {
+                    user_id: { type: GraphQLNonNull(GraphQLString) },
+                    cur_status: { type: GraphQLNonNull(GraphQLString) },
+                    new_status: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    return TransactionModel.updateMany(
+                        {
+                            user_id: args.user_id,
+                            status: args.cur_status,
+                        },
+                        {
+                            status: args.new_status,
+                        },
+                    );
                 },
             },
         },
