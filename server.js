@@ -260,7 +260,7 @@ const schema = new GraphQLSchema({
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserLoginModel(args);
-
+                    var usertype;
                     var promise1 = Promise.resolve(
                         UserModel.find({ userName: args.userName }).exec(),
                     );
@@ -275,6 +275,7 @@ const schema = new GraphQLSchema({
                                 {
                                     userName: args.userName,
                                     password: args.password,
+                                    userType: value[0].userType,
                                 },
                                 'secretkey',
                                 {
