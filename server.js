@@ -61,6 +61,7 @@ const ProductModel = Mongoose.model('product', {
     name: String,
     price: Number,
     stock: Number,
+    owner_user_id: String,
 });
 
 const TransactionModel = Mongoose.model('transaction', {
@@ -139,6 +140,7 @@ const ProductType = new GraphQLObjectType({
         name: { type: GraphQLString },
         price: { type: GraphQLInt },
         stock: { type: GraphQLInt },
+        owner_user_id: { type: GraphQLString },
     },
 });
 
@@ -171,6 +173,19 @@ const schema = new GraphQLSchema({
                     return ProductModel.find().exec();
                 },
             },
+
+            products_owned_by_me: {
+                type: GraphQLList(ProductType),
+                args: {
+                    user_id: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    return ProductModel.find({
+                        owner_user_id: args.user_id,
+                    }).exec();
+                },
+            },
+
             user: {
                 type: UserType,
                 args: {
@@ -224,6 +239,13 @@ const schema = new GraphQLSchema({
             },
 
             transactions: {
+                type: GraphQLList(TransactionType),
+                resolve: (root, args, context, info, req) => {
+                    return TransactionModel.find().exec();
+                },
+            },
+
+            transactions_of_myproducts: {
                 type: GraphQLList(TransactionType),
                 resolve: (root, args, context, info, req) => {
                     return TransactionModel.find().exec();
@@ -302,6 +324,7 @@ const schema = new GraphQLSchema({
                     name: { type: GraphQLNonNull(GraphQLString) },
                     price: { type: GraphQLNonNull(GraphQLInt) },
                     stock: { type: GraphQLNonNull(GraphQLInt) },
+                    owner_user_id: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     var product = new ProductModel(args);
