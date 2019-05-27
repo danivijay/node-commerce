@@ -45,11 +45,11 @@ const AddressModel = Mongoose.model('address', {
 });
 
 const UserModel = Mongoose.model('user', {
-    userName: String,
-    userType: String,
-    password: String,
+    userName: { type: String, required: true },
+    userType: { type: String, required: true },
+    password: { type: String, required: true },
     address: [],
-    email: String,
+    email: { type: String, required: true },
 });
 
 const UserLoginModel = Mongoose.model('userlogin', {
@@ -271,7 +271,9 @@ const schema = new GraphQLSchema({
                 },
                 resolve: (root, args, context, info) => {
                     var user = new UserModel(args);
-                    return user.save();
+                    user.save();
+
+                    return user;
                 },
             },
             login: {
