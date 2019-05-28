@@ -368,6 +368,21 @@ const schema = new GraphQLSchema({
                     );
                 },
             },
+            ship_delivery_transaction: {
+                type: TransactionType,
+                args: {
+                    transaction_id: { type: GraphQLNonNull(GraphQLString) },
+                    new_status: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    return TransactionModel.findByIdAndUpdate(
+                        args.transaction_id,
+                        {
+                            status: args.new_status,
+                        },
+                    );
+                },
+            },
         },
     }),
 });
