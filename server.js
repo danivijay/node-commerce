@@ -238,6 +238,20 @@ const schema = new GraphQLSchema({
                 },
             },
 
+            user_my_products_transactions: {
+                type: GraphQLList(TransactionType),
+                args: {
+                    user_id: { type: GraphQLNonNull(GraphQLString) },
+                    status: { type: GraphQLNonNull(GraphQLString) },
+                },
+                resolve: (root, args, context, info) => {
+                    return TransactionModel.find({
+                        user_id: args.user_id,
+                        status: { $ne: args.status },
+                    }).exec();
+                },
+            },
+
             transactions: {
                 type: GraphQLList(TransactionType),
                 resolve: (root, args, context, info, req) => {
