@@ -71,6 +71,7 @@ const TransactionModel = Mongoose.model('transaction', {
     date: String,
     currency: String,
     status: String,
+    owner_user_id: String,
 });
 
 //jwt verifying function
@@ -154,6 +155,7 @@ const TransactionType = new GraphQLObjectType({
         date: { type: GraphQLString },
         currency: { type: GraphQLString },
         status: { type: GraphQLString },
+        owner_user_id: { type: GraphQLString },
     },
 });
 
@@ -167,10 +169,31 @@ const schema = new GraphQLSchema({
                     return UserModel.find().exec();
                 },
             },
+            // products: {
+            //     type: GraphQLList(ProductType),
+            //     resolve: (root, args, context, info) => {
+            //         return ProductModel.find().exec();
+            //     },
+            // },
+
             products: {
                 type: GraphQLList(ProductType),
+                args: {
+                    criteria: { type: GraphQLNonNull(GraphQLInt) },
+                },
                 resolve: (root, args, context, info) => {
-                    return ProductModel.find().exec();
+                    if (args.criteria === 0) return ProductModel.find().exec();
+                    else {
+                        if (args.criteria < 0) {
+                            return ProductModel.find()
+                                .sort({ price: -1 })
+                                .exec();
+                        } else {
+                            return ProductModel.find()
+                                .sort({ price: 1 })
+                                .exec();
+                        }
+                    }
                 },
             },
 
@@ -242,18 +265,16 @@ const schema = new GraphQLSchema({
                 type: GraphQLList(TransactionType),
                 args: {
                     user_id: { type: GraphQLNonNull(GraphQLString) },
-                    status: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     return TransactionModel.find({
-                        user_id: args.user_id,
-                        status: { $ne: args.status },
+                        owner_user_id: args.user_id,
                     }).exec();
                 },
             },
-
             transactions: {
                 type: GraphQLList(TransactionType),
+
                 resolve: (root, args, context, info, req) => {
                     return TransactionModel.find().exec();
                 },
@@ -261,8 +282,13 @@ const schema = new GraphQLSchema({
 
             transactions_of_myproducts: {
                 type: GraphQLList(TransactionType),
+                args: {
+                    owner_user_id: { type: GraphQLNonNull(GraphQLString) },
+                },
                 resolve: (root, args, context, info, req) => {
-                    return TransactionModel.find().exec();
+                    return TransactionModel.find({
+                        owner_user_id: args.owner_user_id,
+                    }).exec();
                 },
             },
         },
@@ -356,6 +382,7 @@ const schema = new GraphQLSchema({
                     date: { type: GraphQLNonNull(GraphQLString) },
                     currency: { type: GraphQLNonNull(GraphQLString) },
                     status: { type: GraphQLNonNull(GraphQLString) },
+                    owner_user_id: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
                     var transaction = new TransactionModel(args);
