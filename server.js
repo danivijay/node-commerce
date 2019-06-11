@@ -360,6 +360,20 @@ const schema = new GraphQLSchema({
                     // return user;
                 },
             },
+            // product: {
+            //     type: ProductType,
+            //     args: {
+            //         name: { type: GraphQLNonNull(GraphQLString) },
+            //         price: { type: GraphQLNonNull(GraphQLInt) },
+            //         stock: { type: GraphQLNonNull(GraphQLInt) },
+            //         owner_user_id: { type: GraphQLNonNull(GraphQLString) },
+            //     },
+            //     resolve: (root, args, context, info) => {
+            //         var product = new ProductModel(args);
+            //         return product.save();
+            //     },
+            // },
+
             product: {
                 type: ProductType,
                 args: {
@@ -367,12 +381,22 @@ const schema = new GraphQLSchema({
                     price: { type: GraphQLNonNull(GraphQLInt) },
                     stock: { type: GraphQLNonNull(GraphQLInt) },
                     owner_user_id: { type: GraphQLNonNull(GraphQLString) },
+                    edit_mode: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
-                    var product = new ProductModel(args);
-                    return product.save();
+                    if (args.edit_mode === 'false') {
+                        var product = new ProductModel(args);
+                        return product.save();
+                    } else {
+                        return ProductModel.findByIdAndUpdate(args.edit_mode, {
+                            name: args.name,
+                            price: args.price,
+                            stock: args.stock,
+                        });
+                    }
                 },
             },
+
             transaction: {
                 type: TransactionType,
                 args: {
