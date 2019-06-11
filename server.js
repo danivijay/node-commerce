@@ -384,15 +384,80 @@ const schema = new GraphQLSchema({
                     edit_mode: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
+                    console.log('agsname====>>>>', args.name);
+                    console.log('agsprice====>>>>', args.price);
+                    console.log('agsstock====>>>>', args.stock);
                     if (args.edit_mode === 'false') {
                         var product = new ProductModel(args);
                         return product.save();
                     } else {
-                        return ProductModel.findByIdAndUpdate(args.edit_mode, {
-                            name: args.name,
-                            price: args.price,
-                            stock: args.stock,
-                        });
+                        if (args.name !== '') {
+                            if (args.price !== 0) {
+                                if (args.stock !== 0) {
+                                    return ProductModel.findByIdAndUpdate(
+                                        args.edit_mode,
+                                        {
+                                            name: args.name,
+                                            price: args.price,
+                                            stock: args.stock,
+                                        },
+                                    );
+                                } else {
+                                    return ProductModel.findByIdAndUpdate(
+                                        args.edit_mode,
+                                        {
+                                            name: args.name,
+                                            price: args.price,
+                                        },
+                                    );
+                                }
+                            } else {
+                                if (args.stock !== 0) {
+                                    return ProductModel.findByIdAndUpdate(
+                                        args.edit_mode,
+                                        {
+                                            name: args.name,
+                                            stock: args.stock,
+                                        },
+                                    );
+                                } else {
+                                    return ProductModel.findByIdAndUpdate(
+                                        args.edit_mode,
+                                        {
+                                            name: args.name,
+                                        },
+                                    );
+                                }
+                            }
+                        } else {
+                            if (args.price !== 0) {
+                                if (args.stock !== 0) {
+                                    return ProductModel.findByIdAndUpdate(
+                                        args.edit_mode,
+                                        {
+                                            price: args.price,
+                                            stock: args.stock,
+                                        },
+                                    );
+                                } else {
+                                    return ProductModel.findByIdAndUpdate(
+                                        args.edit_mode,
+                                        {
+                                            price: args.price,
+                                        },
+                                    );
+                                }
+                            } else {
+                                if (args.stock !== 0) {
+                                    return ProductModel.findByIdAndUpdate(
+                                        args.edit_mode,
+                                        {
+                                            stock: args.stock,
+                                        },
+                                    );
+                                }
+                            }
+                        }
                     }
                 },
             },
