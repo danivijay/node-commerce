@@ -180,22 +180,68 @@ const schema = new GraphQLSchema({
                 type: GraphQLList(ProductType),
                 args: {
                     criteria: { type: GraphQLNonNull(GraphQLInt) },
+                    searchmode: { type: GraphQLNonNull(GraphQLInt) },
+                    searchitem: { type: GraphQLNonNull(GraphQLString) },
                 },
                 resolve: (root, args, context, info) => {
-                    if (args.criteria === 0) return ProductModel.find().exec();
-                    else {
+                    if (args.criteria === 0) {
+                        if (args.searchmode === 0)
+                            return ProductModel.find().exec();
+                        else {
+                            return ProductModel.find({
+                                name: args.searchitem,
+                            }).exec();
+                        }
+                    } else {
                         if (args.criteria < 0) {
-                            return ProductModel.find()
-                                .sort({ price: -1 })
-                                .exec();
+                            if (args.searchmode === 0) {
+                                return ProductModel.find()
+                                    .sort({ price: -1 })
+                                    .exec();
+                            } else {
+                                return ProductModel.find({
+                                    name: args.searchitem,
+                                })
+                                    .sort({ price: -1 })
+                                    .exec();
+                            }
                         } else {
-                            return ProductModel.find()
-                                .sort({ price: 1 })
-                                .exec();
+                            if (args.searchmode === 0) {
+                                return ProductModel.find()
+                                    .sort({ price: 1 })
+                                    .exec();
+                            } else {
+                                return ProductModel.find({
+                                    name: args.searchitem,
+                                })
+                                    .sort({ price: 1 })
+                                    .exec();
+                            }
                         }
                     }
                 },
             },
+
+            // products: {
+            //     type: GraphQLList(ProductType),
+            //     args: {
+            //         criteria: { type: GraphQLNonNull(GraphQLInt) },
+            //     },
+            //     resolve: (root, args, context, info) => {
+            //         if (args.criteria === 0) return ProductModel.find().exec();
+            //         else {
+            //             if (args.criteria < 0) {
+            //                 return ProductModel.find()
+            //                     .sort({ price: -1 })
+            //                     .exec();
+            //             } else {
+            //                 return ProductModel.find()
+            //                     .sort({ price: 1 })
+            //                     .exec();
+            //             }
+            //         }
+            //     },
+            // },
 
             products_owned_by_me: {
                 type: GraphQLList(ProductType),
